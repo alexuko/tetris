@@ -16,6 +16,7 @@ let gameBoard;
 
 //Create Game board
 const createGameBoard = () => {
+    /*
     gameBoard = [];
     for (let r = 0; r < row; r++) {
         gameBoard[r] = []; //empty 
@@ -23,20 +24,18 @@ const createGameBoard = () => {
             gameBoard[r][c] = empty;
         }
     }
-    // console.table(gameBoard);
+    */
+    // return [...Array(row)].map( r => Array(col).fill(0));
+    gameBoard = [...Array(row)].map(r => Array(col).fill(0))
+    console.table(gameBoard);
 }
 
 const drawGameBoard = () => {
-    //loop throught all columns 0 - 9
-    for (let c = 0; c < col; c++) {
-        //then for each column, loop throught all rows 0 - 19
-        for (let r = 0; r < row; r++) {
-            // console.log('col '+c)           
-            // console.log('row '+r)           
-            drawSquare(c, r)
-
-        }
-    }
+    gameBoard.forEach((row, indexRow) => { //iterate through all rows 0 - 19, then
+        row.forEach((col, indexCol) => { //for each row, iterate through each column 
+            drawSquare(indexCol, indexRow); // and then, draw a square            
+        })
+    });
 }
 
 const drawSquare = (x, y, color = 0) => {
@@ -50,7 +49,13 @@ const drawSquare = (x, y, color = 0) => {
     ctx.fillRect(xPos_board, yPos_board, sq, sq);
     ctx.strokeStyle = color ? `hsl(${color} 100% 25% / 40%)` : `hsl(${color} 0% 5% / 100%)`;
     ctx.strokeRect(xPos_board + (stroke / 2), yPos_board + (stroke / 2), sq - stroke, sq - stroke);
+}
 
+const undrawSquare = (x, y) => {
+    // Undraw a square
+    const xPos_board = sq * x;
+    const yPos_board = sq * y;
+    ctx.clearRect(xPos_board , yPos_board, sq, sq);
 }
 
 let tetrominoes = [
@@ -98,45 +103,90 @@ let tetrominoes = [
     ]
 
 ]
-const colors = [14,45,207,174,66,340,262]
-
-
-
+const colors = [14, 45, 207, 174, 66, 340, 262]
 
 
 class Piece {
     constructor(tetrominoe, color) {
-        this.tetrominoe = tetrominoe;//tetrominoe from the tetrominoe array
-        this.color = color;//color from the colors array
-        this.x = 3;//position X in the canvas
-        this.y = 0;//position Y in the canvas
-        this.point = this.tetrominoe[1][1];//axis point
+        this.tetrominoe = tetrominoe; //tetrominoe from the tetrominoe array
+        this.color = color; //color from the colors array
+        this.x_start = 3; //position X in the canvas
+        this.y_start = 0; //position Y in the canvas
+        this.point = this.tetrominoe[1][1]; //axis point
         this.activeTetrominoe = this.tetrominoe; //current view of the piece
     }
 
     drawPiece = () => {
-        console.table(this.activeTetrominoe)
-        //loop throught all columns 0 - 9
-        for (let col = 0; col < this.activeTetrominoe.length; col++) {
-            for(let row = 0; row < this.activeTetrominoe.length; row++){
-                // console.log(this.activeTetrominoe[col][row])
-                if(this.activeTetrominoe[col][row] === 1){//if there is a "1" in the piece matrix
-                    drawSquare(this.x + row,this.y + col,this.color)//draw a square
+        this.activeTetrominoe.forEach((row, rIndex) => {
+            // console.log(this.activeTetrominoe[rIndex])
+            row.forEach((col, cIndex) => { 
+                // console.log(this.activeTetrominoe[rIndex][cIndex])            
+                if (this.activeTetrominoe[rIndex][cIndex] === 1) { //if there is a "1" in the piece matrix
+                    drawSquare(this.x_start + cIndex, this.y_start + rIndex, this.color); //draw a square
                 }
-                
-            }
-        }
+            })
+        });
+    }
+    
+    erasePiece = () => {
+        this.activeTetrominoe.forEach((row, rIndex) => {
+            row.forEach((col, cIndex) => {             
+                if (this.activeTetrominoe[rIndex][cIndex] === 1) { //if there is a "1" in the piece matrix
+                    undrawSquare(this.x_start + cIndex, this.y_start + rIndex); //draw a square
+                    drawSquare(this.x_start + cIndex, this.y_start + rIndex); //draw a square
+                }
+            })
+        });
     }
 
-    rotate = (clockwise = true) =>{
-        if(clockwise){
+    rotate = (clockwise = true) => {
+        if (clockwise) {
             console.log('clockwise')
         }
 
     }
-}
-let piece = new Piece(tetrominoes[3],colors[6])
+    moveDown = () => {
+        this.erasePiece();
+        this.y_start += 1;
+        this.drawPiece();
+    }
+    
+    moveRight = () => {
+        this.erasePiece();
+        this.x_start += 1;
+        this.drawPiece();
+    }
 
+    moveLeft = () => {
+        this.erasePiece();
+        this.x_start -= 1;
+        this.drawPiece();
+    }
+}
+let piece = new Piece(tetrominoes[6], colors[0])
+
+const keyControl = (e) => {
+    if(e.type === "keydown"){
+        if(e.key === "ArrowUp" || e.keyCode === 38){
+            console.log('up')
+        }
+        if(e.key === "ArrowRight" || e.keyCode === 39){
+            piece.moveRight();
+        }
+        if(e.key === "ArrowLeft" || e.keyCode === 37){
+            piece.moveLeft();
+        }
+        if(e.key === "ArrowDown" || e.keyCode === 40){
+            piece.moveDown();
+        }
+    }
+    if(e.type === "keyup"){
+        console.log(e)
+    }
+}
+// window.addEventListener('keydown', keyDownController)
+// window.addEventListener('keyup', keyDownController)
+['keydown', 'keyup'].forEach( e => window.addEventListener(e,keyControl))
 createGameBoard();
 drawGameBoard()
 piece.drawPiece()
