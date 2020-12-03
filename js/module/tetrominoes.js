@@ -115,26 +115,15 @@ export let tetrominoes = [
         ]
     ],
     // [5] O-tetrominoe
-    [
-        [ //position[0] = Position 1
-            [0, 1, 1],
-            [0, 1, 1],
-            [0, 0, 0]
-        ],
-        [ //position[1] = Position 2
-            [0, 0, 0],
-            [0, 1, 1],
-            [0, 1, 1]
-        ],
-        [ //position[2] = Position 3
-            [0, 0, 0],
-            [1, 1, 0],
-            [1, 1, 0]
-        ],
-        [ //position[3] = Position 4
-            [1, 1, 0],
-            [1, 1, 0],
-            [0, 0, 0]
+    [     //position[0] = Position 1
+          //position[1] = Position 2
+          //position[2] = Position 3
+          //position[3] = Position 4
+        [   
+            [0, 0, 0, 0],
+            [0, 1, 1, 0],
+            [0, 1, 1, 0],
+            [0, 0, 0, 0]
         ]
     ],
     // [6] I-tetrominoe
@@ -150,17 +139,18 @@ export let tetrominoes = [
             [1, 1, 1, 1],
             [0, 0, 0, 0],
             [0, 0, 0, 0]
-        ],
+        ]
+        ,
         [ //position[2] = Position 3
-            [0, 1, 0, 0],
-            [0, 1, 0, 0],
-            [0, 1, 0, 0],
-            [0, 1, 0, 0]
+            [0, 0, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 1, 0]
         ],
         [ //position[3] = Position 4
             [0, 0, 0, 0],
-            [1, 1, 1, 1],
             [0, 0, 0, 0],
+            [1, 1, 1, 1],
             [0, 0, 0, 0]
         ]
     ]
