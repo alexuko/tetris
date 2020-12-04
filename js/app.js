@@ -16,16 +16,22 @@ canvas.height = ROW * SQ;
 
 let gameBoard;
 
+const DIRECTION = {
+    up: ['up', -1],
+    right: ['right', 1],
+    down: ['down', 1],
+    left: ['left', -1],
+    rotate: ['rotate', 0]
+
+}
+// MOD of positive or negative numbers
+// returns remainder of dividend by divisor
+const mod = (dividend, divisor) => {
+    return (dividend % divisor + divisor) % divisor;
+}
 //Create Game board
 const createGameBoard = () => {
     gameBoard = [...Array(ROW)].map(r => Array(COL).fill(0))
-    // gameBoard.forEach((r, ir) => {
-    //     r.forEach((c, ic) => {
-    //         gameBoard[ir][ic] = ic;
-    //     })
-
-    // })
-    
     //Testing
     // gameBoard[5][3] = 1;
     // gameBoard[5][4] = 1;
@@ -64,20 +70,7 @@ const undrawSquare = (x, y) => {
     ctx.clearRect(xPos_board, yPos_board, SQ, SQ);
 }
 
-
 const colors = [14, 45, 207, 174, 66, 340, 262];
-
-const DIRECTION = {
-    up:    ['up'   , -1],
-    right: ['right',  1],
-    down:  ['down' ,  1],
-    left:  ['left' , -1]
-}
-// MOD of positive or negative numbers
-// returns remainder of dividend by divisor
-const mod = (dividend, divisor) => {
-    return (dividend % divisor + divisor) % divisor;
-}
 
 class Piece {
     constructor(tetrominoe, color) {
@@ -85,9 +78,9 @@ class Piece {
         this.color = color; //color from the colors array
         this.x = 3; //position X in the canvas
         this.y = 0; //position Y in the canvas
-        this.position = 0; 
+        this.position = 0;
         this.activeTetrominoe = this.tetrominoe[this.position]; //tetrominow with current position
-        
+
     }
 
     drawPiece = () => {
@@ -114,27 +107,22 @@ class Piece {
         });
     }
 
-    rotate = (clockwise = true) => {
-        let rotation = clockwise ? 1 : -1;
-        // this.position =  clockwise ? (this.position + rotation) % this.tetrominoe.length
-        //                           : ((this.position + rotation) + this.tetrominoe.length) % this.tetrominoe.length;
-
-        this.erasePiece()
-        // position 0 - 1 = -1 + 4 = 3 % 4 = 3
-        // position 0 + 1 = 1 % 4 = 1
-        // position 1 + 1 = 2 % 4 = 2
-        
-        this.position = mod(this.position + rotation, this.tetrominoe.length);
-        this.activeTetrominoe = this.tetrominoe[this.position]
-        
-        // this.kick()
-        this.drawPiece()
-        // console.log('this.x ' + this.x + ' - this.y '+ this.y)
-
-
+    goUp = () => {
+            this.erasePiece();
+            this.y += DIRECTION.up[1];
+            this.drawPiece();
     }
-
-     moveDown = () => {
+    goRight = () =>{
+        this.erasePiece();
+        this.x += DIRECTION.right[1];
+        this.drawPiece();
+    }
+    goLeft = () => {
+        this.erasePiece();
+        this.x -= -DIRECTION.left[1];
+        this.drawPiece();
+    }
+    moveDown = () => {
         if (!this.collision(DIRECTION.down)) {
             // if(!this.hitBottom(DIRECTION.down)){
             this.erasePiece();
@@ -144,30 +132,39 @@ class Piece {
         }
 
     }
-
-    moveRight = () => {
+    
+    moveRight = (rotateAction = false) => {
         //check if there is no collision and if there is not, 
         //then move tetrominoe to the right
-        if (!this.collision(DIRECTION.right)) {
-            // if (!this.hitWall(DIRECTION.right)) {
-            this.erasePiece();
-            this.x += DIRECTION.right[1];
-            this.drawPiece();
+        if(!rotateAction){
+            if (!this.collision(DIRECTION.right)) {
+                // if (!this.hitWall(DIRECTION.right)) {
+                this.goRight()
+            }
+            
+        }else{
+            this.goRight()
+            
+
         }
     }
 
-    moveLeft = () => {
+   
+
+    moveLeft = (rotateAction = false) => {
         //check if there is no collision and if there is not, 
-        //then move tetrominoe to the left 
-        if (!this.collision(DIRECTION.left)) {
-            // if (!this.hitWall(DIRECTION.left)) {
-            this.erasePiece();
-            this.x -= -DIRECTION.left[1];
-            this.drawPiece();
-        }
+        //then move tetrominoe to the left
+        if(!rotateAction){
+            if (!this.collision(DIRECTION.left)) {
+                // if (!this.hitWall(DIRECTION.left)) {
+                this.goLeft()
+            }
+        }else{
+            this.goLeft()
+        } 
     }
 
-    collision = (dir) => {
+    collision = (dir = 0) => {
         // console.log('**********************')
         for (let r = 0; r < this.activeTetrominoe.length; r++) { //loop through all of the rows
             for (let c = 0; c < this.activeTetrominoe[r].length; c++) { //for each row loop through all of the columns
@@ -177,15 +174,19 @@ class Piece {
                 let yCoord = this.y + r;
                 // console.log('prev xCoord ' + xCoord)
                 // console.log('prev yCoord ' + yCoord)
-                try{
-                    if (dir[0] === 'down') {
+                try {                    
+                    if (dir === 0) {
+                        //check for collision when rotation
+                        if (gameBoard[yCoord][xCoord] === undefined || gameBoard[yCoord][xCoord] !== empty) return true;
+
+                    } else if (dir[0] === 'down') {
                         // Direction is DOWN then check "Y" limits
                         // Add the direction value to the yCoord (1 OR -1) we wanna move to,
                         // So we can check if that space within the gameboard is either occupied Or out of bounds. 
                         yCoord += dir[1];
-                        console.log('after yCoord ' + yCoord)
+                        // console.log('after yCoord ' + yCoord)
                         // console.log(gameBoard[yCoord][xCoord])
-                        if(gameBoard[yCoord][xCoord] ===  undefined || gameBoard[yCoord][xCoord] !==  empty) return true;
+                        if (gameBoard[yCoord][xCoord] === undefined || gameBoard[yCoord][xCoord] !== empty) return true;
                         // Direction is DOWN then check "Y" limits
                         // if (yCoord >= ROW) return true; //reached the limit, is has collided
                         // if (yCoord <= ROW) continue; // current square from tetrominoe is ok. So check NEXT
@@ -194,74 +195,91 @@ class Piece {
                         // Add the direction value to the xCoord (1 OR -1) we wanna move to,
                         // So we can check if that space within the gameboard is either occupied Or out of bounds. 
                         xCoord += dir[1];
-                        if(gameBoard[yCoord][xCoord] === undefined || gameBoard[yCoord][xCoord] !== empty) return true;
+                        if (gameBoard[yCoord][xCoord] === undefined || gameBoard[yCoord][xCoord] !== empty) return true;
                         // if (xCoord < 0 || xCoord >= COL) return true;
                         // if (xCoord > 0 || xCoord < COL) continue;
                     }
 
-                }catch(error){
+                } catch (error) {
                     console.log('Out of Bounds')
                     return true;
                 }
+
 
             }
         }
         return false; // if no collision then if ok to move tetrominoe
     }
-    kick = () => {
-        const prevX = this.x;
-        const prevY = this.y;
-        let kick = 0;
-        let direction;
+
+    rotate = (clockwise = true) => {
+        let rotation = clockwise ? 1 : -1;
+        // this.position =  clockwise ? (this.position + rotation) % this.tetrominoe.length
+        //                           : ((this.position + rotation) + this.tetrominoe.length) % this.tetrominoe.length;
+
+        this.erasePiece()
+        // position 0 - 1 = -1 + 4 = 3 % 4 = 3
+        // position 0 + 1 = 1 % 4 = 1
+        // position 1 + 1 = 2 % 4 = 2
+        this.position = mod(this.position + rotation, this.tetrominoe.length);
+        this.activeTetrominoe = this.tetrominoe[this.position]
+        // console.log(this.collision())
+        if(this.collision()){
+            // this.rotate(clockwise);
+            this.wallKick()
+            //arrage the piece to a correct place within the gameboard
+        };
+        // draw piece back to the gameboard
+        this.drawPiece()
+    }
+
+    wallKick = () => {
+        let new_x, new_y, calc, Xoffset = 0, Yoffset = 0;
         for (let r = 0; r < this.activeTetrominoe.length; r++) { //loop through all of the rows
             for (let c = 0; c < this.activeTetrominoe[r].length; c++) { //for each row loop through all of the columns
                 if (!this.activeTetrominoe[r][c]) continue; // skip zeros in the tetrominoe matrix
-                let new_x = this.x + c 
-                let new_y = this.y + r 
-                //if rotation overlap right wall
+                new_x = this.x + c;
+                new_y = this.y + r;
                 
+                //Left Kick
+                if(new_x < 0) new_x < Xoffset ? Xoffset = new_x : Xoffset;
+                
+                //Right Kick
                 if(new_x >= COL) {
-                    direction = DIRECTION.left;
-                    kick++;
+                    calc = new_x - (COL - 1)
+                    // 10 - 9 = 1 --> Xoffset = 0 -> 1 > 0 = TRUE  --> Xoffset = 1
+                    // 11 - 9 = 2 --> Xoffset = 1 -> 1 > 2 = FALSE --> Xoffset = 2
+                    calc > Xoffset ? Xoffset = calc : Xoffset;
+                    
                 }
-                //if rotation overlap left wall
-                if(new_x < 0) {
-                    direction = DIRECTION.right;
-                    kick++;
+                //bottom Kick
+                if(new_y >= ROW){
+                    calc = new_y - (ROW - 1);
+                    calc > Yoffset ? Yoffset = calc : Yoffset;
                 }
-                //if rotation overlap bottom
-                if(new_y >= ROW) {
-                    direction = DIRECTION.up;
-                    kick++;                    
-                }
+
+                
+                
             }
         }
-        //rotation did not collide with anything, therefore just return 
-        if(direction === undefined) return; 
-        // rotation collide on the right wall, then move piece to the left
-        // rotation collide on the left wall, then move piece to the right
-        console.log('this.x' + this.x)
-        console.log('this.y' + this.y)
-        console.log('direction' + direction)
-        console.log('kick' + kick)
-        if(direction[0] === 'left' || direction[0] === 'right'){
-            this.x = this.x + (direction[1] * kick);            
+        if(Yoffset){
+            console.log('Y OFFSET')
+            for(let kick = 0; kick < Math.abs(Yoffset); kick++){
+                if((Yoffset + ROW) >= ROW) this.goUp();
+            }
         }
-        if(direction[0] === 'up'){
-            console.log(prevY)
-            this.y = this.y + (direction[1] * kick) < ROW - this.activeTetrominoe.length ? 
-                     this.y + (direction[1] * (kick - 1)) : 
-                     this.y + (direction[1] * kick) ;
-            console.log(this.y)
-            
-        }       
-
+        if(Xoffset){
+            console.log('X OFFSET')
+            for(let kick = 0; kick < Math.abs(Xoffset); kick++){
+                if(Xoffset < 0) this.moveRight(true);
+                if((Xoffset + COL) >= COL) this.moveLeft(true);
+            }
+        }
     }
 
 }
 
 
-let piece = new Piece(tetrominoes[2], colors[0])
+let piece = new Piece(tetrominoes[6], colors[0])
 
 let start = Date.now()
 const update = () => {
