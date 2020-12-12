@@ -9,19 +9,21 @@ const SQ = 30;
 
 const COL = 10;
 const ROW = 22;
-let empty = 0;
-let level = 1;
 canvas.width = COL * SQ;
 canvas.height = ROW * SQ;
+let empty = 0;
+let level = 0;
 
 let gameBoard;
 let piece;
+let gameOver = true;
+let start = Date.now();
 
 const DIRECTION = {
-    up: ["up", -1],
-    right: ["right", 1],
-    down: ["down", 1],
-    left: ["left", -1],
+    up:     ["up", -1],
+    right:  ["right", 1],
+    down:   ["down", 1],
+    left:   ["left", -1],
     rotate: ["rotate", 0]
 
 };
@@ -32,83 +34,29 @@ const mod = (dividend, divisor) => {
 };
 //Create Game board
 const createGameBoard = () => {
-    // gameBoard = [...Array(ROW)].map(r => Array(COL).fill(0));
-    gameBoard = [...Array(ROW)].map(() => Array(COL).fill(0));
-    // Testing Overlaps
-    // gameBoard[6][2] = 1;
-    // gameBoard[6][3] = 1;
-    // gameBoard[6][4] = 1;
-    // gameBoard[6][5] = 1;
-    // gameBoard[6][6] = 1;
-    // gameBoard[6][7] = 1;
-    // gameBoard[6][8] = 1;
-    // gameBoard[6][9] = 1;
-    // drawSquare(2,6,60)
-    // drawSquare(3,6,60)
-    // drawSquare(4,6,60)
-    // drawSquare(5,6,60)
-    // drawSquare(6,6,60)
-    // drawSquare(7,6,60)
-    // drawSquare(8,6,60)
-    // drawSquare(9,6,60)
-    // gameBoard[18][2] = 1;
-    // gameBoard[18][3] = 1;
-    // gameBoard[18][4] = 1;
-    // gameBoard[18][5] = 1;
-    // gameBoard[18][6] = 1;
-    // gameBoard[18][7] = 1;
-    // gameBoard[18][8] = 1;
-    // gameBoard[18][9] = 1;
-    // drawSquare(2,18,180)
-    // drawSquare(3,18,180)
-    // drawSquare(4,18,180)
-    // drawSquare(5,18,180)
-    // drawSquare(6,18,180)
-    // drawSquare(7,18,180)
-    // drawSquare(8,18,180)
-    // drawSquare(9,18,180)
-    // gameBoard[13][7] = 1;    
-    // gameBoard[14][7] = 1;    
-    // gameBoard[15][7] = 1;    
-    // gameBoard[16][7] = 1;    
-    // gameBoard[17][7] = 1;    
-    // drawSquare(7,13,120)
-    // drawSquare(7,14,120)
-    // drawSquare(7,15,120)
-    // drawSquare(7,16,120)
-    // drawSquare(7,17,120)
-    // gameBoard[13][2] = 1;    
-    // gameBoard[14][2] = 1;    
-    // gameBoard[15][2] = 1;    
-    // gameBoard[16][2] = 1;    
-    // gameBoard[17][2] = 1;    
-    // drawSquare(2,13,120)
-    // drawSquare(2,14,120)
-    // drawSquare(2,15,120)
-    // drawSquare(2,16,120)
-    // drawSquare(2,17,120)
-    
-    // console.table(gameBoard)
+    gameBoard = [...Array(ROW)].map(() => Array(COL).fill(0));    
 };
 
 const drawGameBoard = () => {
     gameBoard.forEach((row, indexRow) => { //iterate through all rows 0 - 19, then
         row.forEach((col, indexCol) => { //for each row, iterate through each column 
-            drawSquare(indexCol, indexRow); // and then, draw a square            
+            drawSquare(indexCol, indexRow,getColor(7)); // and then, draw a square            
         });
     });
 };
 
-const drawSquare = (x, y, color = 0) => {
+const drawSquare = (x, y, color) => {
     // //Draw a square
-    ctx.lineWidth = SQ / 10; // stroke width
+    // console.log(color)
+    ctx.lineWidth = SQ / 20 // stroke width
     const stroke = ctx.lineWidth;
+    
     const xPos_board = SQ * x;
     const yPos_board = SQ * y;
 
-    ctx.fillStyle = color ? `hsl(${color} 90% 50% / 100%)` : `hsl(${color} 0% 10% / 20%)`;
+    ctx.fillStyle = color[0] !== 0 ? `hsl(${color[0]} ${color[1]}% ${color[2]}% / ${color[3]}%)` : `hsl(${color[0]} ${color[1]}% ${color[2]}% / ${color[3]}%)`;
     ctx.fillRect(xPos_board, yPos_board, SQ, SQ);
-    ctx.strokeStyle = color ? `hsl(${color} 100% 25% / 40%)` : `hsl(${color} 0% 5% / 100%)`;
+    ctx.strokeStyle = color[0] !== 0 ? `hsl(${color[0]} ${color[1]}% 30% / 90%)` : `hsl(${color[0]} ${color[1]}% 0% / 100%)`;
     ctx.strokeRect(xPos_board + (stroke / 2), yPos_board + (stroke / 2), SQ - stroke, SQ - stroke);
 };
 
@@ -119,50 +67,85 @@ const undrawSquare = (x, y) => {
     ctx.clearRect(xPos_board, yPos_board, SQ, SQ);
 };
 
-const colors = [14, 45, 207, 174, 66, 340, 262];
+
+const getColor = pick => {
+    const colors = [
+        [276, 94, 61, 100],  // T-tetromino
+        [22, 100, 54, 100],  // L-tetromino
+        [220, 95, 58, 100],  // J-tetromino
+        [97, 87, 50, 100],   // S-tetromino
+        [349, 100, 55, 100], // Z-tetromino
+        [48, 100, 53, 100],  // O-tetromino
+        [189, 99, 49, 100],  // I-tetromino 
+        [0, 0, 10, 20]       // !-Black Square
+    ]
+    return colors[pick];
+}
+
+
+
 
 class Piece {
-    constructor(tetrominoe, color) {
+    constructor(tetrominoe, color, number) {
         this.tetrominoe = tetrominoe; //tetrominoe from the tetrominoe array with all of the positions
         this.color = color; //color from the colors array
-        this.x = 3; //position X in the canvas
-        this.y = -1; //position Y in the canvas
+        this.number = number;
+        // All tetrominoes spawn horizontally and wholly above the playfield.
+        // I & O spawn middle AND  J,L,S,Z & T  spawn rounded to the left.
+        this.x = 3; 
+        this.y = this.number < 5 ? 0 : -1; 
+        console.log(`Tetromino: ${this.number}`)
+        console.log(`x: ${this.x} y: ${this.y}`)
         this.position = 0;
         this.activeTetrominoe = this.tetrominoe[this.position]; //tetrominow with current position
 
     }
 
     drawPiece() {
-        this.activeTetrominoe.forEach((row, rIndex) => {
-            // console.log(this.activeTetrominoe[rIndex])
-            row.forEach((col, cIndex) => {
-                // console.log(this.activeTetrominoe[rIndex][cIndex])            
-                if (this.activeTetrominoe[rIndex][cIndex] === 1) { //if there is a "1" in the piece matrix
+        try {
+            this.activeTetrominoe.forEach((row, rIndex) => {
+                // console.log(this.activeTetrominoe[rIndex])
+                row.forEach((col, cIndex) => {
+                    // console.log(this.activeTetrominoe[rIndex][cIndex])            
+                    if (this.activeTetrominoe[rIndex][cIndex]) { //if there is a "1" in the piece matrix
                     // console.log(gameBoard[this.y+rIndex][this.x+cIndex])
-                    drawSquare(this.x + cIndex, this.y + rIndex, this.color); //draw a square
-                }
+                    if(gameBoard[this.y + rIndex][this.x + cIndex] !== empty){
+                            
+                            //move the position of the piece 1 space up, it does not draw it on top of previous
+                            console.log('gameover')
+                            this.y --;
+                            console.log(this.y)
+                            gameOver = true;
+                            return;
+                        }
+                        drawSquare(this.x + cIndex, this.y + rIndex, getColor(this.number)); //draw a square
+                    }
+                });
             });
-        });
+
+        }catch(e){
+            gameOver = true;
+            console.error('Out of bounds - "GAME OVER')
+
+        }
     }
 
     erasePiece() {
         this.activeTetrominoe.forEach((row, rIndex) => {
             row.forEach((col, cIndex) => {
-                if (this.activeTetrominoe[rIndex][cIndex] === 1) { //if there is a "1" in the piece matrix
+                if (this.activeTetrominoe[rIndex][cIndex]) { //if there is a "1" in the piece matrix
                     undrawSquare(this.x + cIndex, this.y + rIndex); //draw a square
-                    drawSquare(this.x + cIndex, this.y + rIndex); //draw a square
+                    drawSquare(this.x + cIndex, this.y + rIndex, getColor(7)); //draw a square
                 }
             });
         });
     }
  
-    goTo ( dir ) {
-        
+    goTo ( dir ) {        
         if(dir[0] === 'up'   )  this.y -= 1;            
         if(dir[0] === 'left' )  this.x -= 1;
         if(dir[0] === 'right')  this.x += 1;
-        if(dir[0] === 'down' )  this.y += 1;
-        
+        if(dir[0] === 'down' )  this.y += 1;        
     }
 
     merge() {
@@ -177,17 +160,20 @@ class Piece {
         }catch(error) {
             console.log('game over')
         }
-        
+        // console.table(gameBoard)
     }
     moveDown() {
-        if (!this.collision(DIRECTION.down)){
-            this.erasePiece()
-            this.goTo(DIRECTION.down)
-            this.drawPiece()
-        }else{
-            this.merge()
-            piece = getRandomPiece()         
-        }
+        if(!gameOver){
+            if (!this.collision(DIRECTION.down)){
+                this.erasePiece()
+                this.goTo(DIRECTION.down)
+                this.drawPiece()
+            }else{
+                this.merge()
+                piece = getRandomPiece()         
+                piece.drawPiece();
+            }
+        }else console.log('game over' + gameOver);
     }
 
 
@@ -264,7 +250,7 @@ class Piece {
         
 
     }
-    
+
     fixOverlap(){    
             let new_x, new_y;
             for (let r = 0; r < this.activeTetrominoe.length; r++) { //loop through all of the rows
@@ -445,57 +431,64 @@ const getRandomPiece = () => {
     // and return a number. Math.floor() will convert the double to the nearest lower int 
     const rand = Math.floor( Math.random() * tetrominoes.length);
     // console.log(`piece number ${rand}`)
-    return new Piece(tetrominoes[rand],colors[rand])
+    return new Piece(tetrominoes[rand],getColor(rand),rand)
 }
 
 
 
-let start = Date.now();
+
 
 const update = () => {
-    let now = Date.now();
-    let timeCounter = now - start;
-    const sec = 1000 / level;
-
-    if (timeCounter > sec) {
-        piece.moveDown();
-        start = Date.now();
+    if(!gameOver){
+        let now = Date.now();
+        let timeCounter = now - start;
+        const sec = 1000 / level;
+    
+        if (timeCounter > sec) {
+            piece.moveDown();
+            start = Date.now();
+        }
+    
+        // eslint-disable-next-line no-unused-vars
+        requestAnimationFrame(update);
     }
-
-    // eslint-disable-next-line no-unused-vars
-    requestAnimationFrame(update);
 };
 
 const keyControl = (e) => {
-    // console.log(e)
-    if (e.type === "keydown") {
-        if (e.key === "KeyZ" || e.keyCode === 90) {
-            piece.rotate(false);
-        }
-        if (e.key === "ArrowUp" || e.keyCode === 38) {
-            piece.rotate(true);
-        }
-        if (e.key === "ArrowRight" || e.keyCode === 39) {
-            piece.moveRight();
-            start = Date.now();
-            
-        }
-        if (e.key === "ArrowLeft" || e.keyCode === 37) {
-            piece.moveLeft();
-            start = Date.now();
-        }
-        if (e.key === "ArrowDown" || e.keyCode === 40) {
-            piece.moveDown();
-        }
-    }
-    if (e.type === "keyup") {
+    if(!gameOver){
         // console.log(e)
+        if (e.type === "keydown") {
+            if (e.key === "KeyZ" || e.keyCode === 90) {
+                piece.rotate(false);
+            }
+            if (e.key === "ArrowUp" || e.keyCode === 38) {
+                piece.rotate(true);
+            }
+            if (e.key === "ArrowRight" || e.keyCode === 39) {
+                piece.moveRight();
+                start = Date.now();
+                
+            }
+            if (e.key === "ArrowLeft" || e.keyCode === 37) {
+                piece.moveLeft();
+                start = Date.now();
+            }
+            if (e.key === "ArrowDown" || e.keyCode === 40) {
+                piece.moveDown();
+            }
+        }
+        if (e.type === "keyup") {
+            // console.log(e)
+        }
+
     }
 };
 
 const init = () => {
     createGameBoard();
     drawGameBoard();
+    gameOver = false;
+    level = 1;
     piece = getRandomPiece()
     piece.drawPiece();    
     // update()
