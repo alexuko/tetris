@@ -40,12 +40,12 @@ const createGameBoard = () => {
 const drawGameBoard = () => {
     gameBoard.forEach((row, indexRow) => { //iterate through all rows 0 - 19, then
         row.forEach((col, indexCol) => { //for each row, iterate through each column 
-            drawSquare(indexCol, indexRow,getColor(7)); // and then, draw a square            
+            drawSquare(indexCol, indexRow); // and then, draw a square            
         });
     });
 };
 
-const drawSquare = (x, y, color) => {
+const drawSquare = (x, y, color = null) => {
     // //Draw a square
     // console.log(color)
     ctx.lineWidth = SQ / 20 // stroke width
@@ -54,9 +54,9 @@ const drawSquare = (x, y, color) => {
     const xPos_board = SQ * x;
     const yPos_board = SQ * y;
 
-    ctx.fillStyle = color[0] !== 0 ? `hsl(${color[0]} ${color[1]}% ${color[2]}% / ${color[3]}%)` : `hsl(${color[0]} ${color[1]}% ${color[2]}% / ${color[3]}%)`;
+    ctx.fillStyle = color ? `hsl(${color[0]} ${color[1]}% ${color[2]}% / ${color[3]}%)` : `hsl(0 0% 10% / 20%)`;
     ctx.fillRect(xPos_board, yPos_board, SQ, SQ);
-    ctx.strokeStyle = color[0] !== 0 ? `hsl(${color[0]} ${color[1]}% 30% / 90%)` : `hsl(${color[0]} ${color[1]}% 0% / 100%)`;
+    ctx.strokeStyle = color ? `hsl(${color[0]} ${color[1]}% 30% / 90%)` : `hsl(0 0% 0% / 100%)`;
     ctx.strokeRect(xPos_board + (stroke / 2), yPos_board + (stroke / 2), SQ - stroke, SQ - stroke);
 };
 
@@ -70,14 +70,13 @@ const undrawSquare = (x, y) => {
 
 const getColor = pick => {
     const colors = [
-        [276, 94, 61, 100],  // T-tetromino
-        [22, 100, 54, 100],  // L-tetromino
-        [220, 95, 58, 100],  // J-tetromino
-        [97, 87, 50, 100],   // S-tetromino
-        [349, 100, 55, 100], // Z-tetromino
-        [48, 100, 53, 100],  // O-tetromino
-        [189, 99, 49, 100],  // I-tetromino 
-        [0, 0, 10, 20]       // !-Black Square
+        [276, 94, 61, 100],  // T-tetromino 
+        [31, 94, 48, 100],  // L-tetromino
+        [230, 98, 50, 100],  // J-tetromino
+        [100, 60, 48, 100],   // S-tetromino
+        [356, 100, 40, 100], // Z-tetromino
+        [58, 85, 52, 100],  // O-tetromino
+        [192, 44, 85, 100]  // I-tetromino 
     ]
     return colors[pick];
 }
@@ -110,22 +109,19 @@ class Piece {
                     if (this.activeTetrominoe[rIndex][cIndex]) { //if there is a "1" in the piece matrix
                     // console.log(gameBoard[this.y+rIndex][this.x+cIndex])
                     if(gameBoard[this.y + rIndex][this.x + cIndex] !== empty){
-                            
                             //move the position of the piece 1 space up, it does not draw it on top of previous
                             console.log('gameover')
-                            this.y --;
-                            console.log(this.y)
-                            gameOver = true;
-                            return;
+                            gameOver = true;  
+                            return;// so this does not overdraw the previous piece
+
                         }
                         drawSquare(this.x + cIndex, this.y + rIndex, getColor(this.number)); //draw a square
                     }
                 });
             });
-
+            
         }catch(e){
-            gameOver = true;
-            console.error('Out of bounds - "GAME OVER')
+            console.log('Piece rotated Out of bounds')
 
         }
     }
@@ -135,7 +131,7 @@ class Piece {
             row.forEach((col, cIndex) => {
                 if (this.activeTetrominoe[rIndex][cIndex]) { //if there is a "1" in the piece matrix
                     undrawSquare(this.x + cIndex, this.y + rIndex); //draw a square
-                    drawSquare(this.x + cIndex, this.y + rIndex, getColor(7)); //draw a square
+                    drawSquare(this.x + cIndex, this.y + rIndex); //draw a square
                 }
             });
         });
@@ -160,7 +156,7 @@ class Piece {
         }catch(error) {
             console.log('game over')
         }
-        // console.table(gameBoard)
+
     }
     moveDown() {
         if(!gameOver){
@@ -218,35 +214,42 @@ class Piece {
 
     
     rotate(clockwise = false, rotTimes = 0) {
-        console.log('rotTimes '+ rotTimes)        
-        // Check if the piece will rotate clockwise or counterclockwise
-        let rotation = clockwise ? 1 : -1;
-        // If this is the first time that the piece rotates then erase the piece
-        if(rotTimes === 0) this.erasePiece();
-        // Increment the number of rotation times
-        rotTimes++;
-        // position 0 - 1 = -1 + 4 = 3 % 4 = 3
-        // position 0 + 1 = 1 % 4 = 1
-        // position 1 + 1 = 2 % 4 = 2
-        this.position = mod(this.position + rotation, this.tetrominoe.length);// Move to prev or next tetrominoe position
-        this.activeTetrominoe = this.tetrominoe[this.position];// get the position from the original tetrominoe and pass it to the active tetrominoe
-        
-        // Check if the piece overlapped with the wall, if it did then call wallkick()
-        if (this.collision(DIRECTION.rotate)) this.wallKick();//arrage the piece to a correct place within the gameboard
-        
-        // Check that piece did not overlapped with another piece after rotation
-        if (!this.piecesOverlapped()) {
-            // If it did not then redraw the piece and finish method
+        try{
+            console.log('rotTimes '+ rotTimes)        
+            // Check if the piece will rotate clockwise or counterclockwise
+            let rotation = clockwise ? 1 : -1;
+            // If this is the first time that the piece rotates then erase the piece
+            if(rotTimes === 0) this.erasePiece();
+            // Increment the number of rotation times
+            rotTimes++;
+            // position 0 - 1 = -1 + 4 = 3 % 4 = 3
+            // position 0 + 1 = 1 % 4 = 1
+            // position 1 + 1 = 2 % 4 = 2
+            // Move to prev or next tetrominoe position
+            this.position = mod(this.position + rotation, this.tetrominoe.length);
+            // get the position from the original tetrominoe and pass it to the active tetrominoe
+            this.activeTetrominoe = this.tetrominoe[this.position];
+            
+            // Check if the piece overlapped with the wall, if it did then call wallkick()
+            //arrage the piece to a correct place within the gameboard
+            if (this.collision(DIRECTION.rotate)) this.wallKick();
+            
+            // Check that piece did not overlapped with another piece after rotation
+            if (!this.piecesOverlapped()) {
+                // If it did not then redraw the piece and finish method
+                this.drawPiece()
+                return;
+            }
+            // if piece overlapped then fix overlap
+            this.fixOverlap();
+            // if piece still overlapping then rotate piece until a suitable nerby space for it 
+            if (this.piecesOverlapped() && rotTimes <= 8 ) this.rotate(rotation,rotTimes)
+            
+            // Once piece does not overlap then redraw piece on the Gameboard
             this.drawPiece()
-            return;
+        }catch(e){
+            console.log(e)
         }
-        // if piece overlapped then fix overlap
-        this.fixOverlap();
-        // if piece still overlapping then rotate piece until a suitable nerby space for it 
-        if (this.piecesOverlapped() && rotTimes <= 8 ) this.rotate(rotation,rotTimes)
-        
-        // Once piece does not overlap then redraw piece on the Gameboard
-        this.drawPiece()
         
 
     }
@@ -306,9 +309,8 @@ class Piece {
             return false;
 
         }catch(e){
-            //this happens when the piece its on a NEGATIVE Y coordinate 
-            console.log('out of bounds')
-            return false;
+            console.log(`out of bounds ${e}`)
+
         }
     }
 
@@ -330,10 +332,13 @@ class Piece {
                         // console.log('board '+ (gameBoard[yCoord][xCoord] !== empty))
                         // Check if any SQUARE that builds up the tetrominoe is out of bounds 
                         // or overlaps an already occupied space
-                        if (yCoord >= ROW   || // if new yCoord is (Grater or Equals) than ROW(20)  
+                        if (yCoord >= ROW   ||
+                            yCoord < 0      || // if new yCoord is (Grater or Equals) than ROW(20)  
                             xCoord < 0      || // if xCoord is (less) than the left wall (0)
-                            xCoord >= COL   // || gameBoard[yCoord][xCoord] !== empty // if xCoord is (Grater or Equals) than the right wall (10)
-                            )  return true;
+                            xCoord >= COL   ){
+                                console.log(`collision()/rotate wall or floor collision`)
+                                return true;
+                            }  
 
                     } else if (dir[0] === "down") {
                         // Direction is DOWN then check "Y" limits
@@ -397,6 +402,9 @@ class Piece {
                     calc = new_y - (ROW - 1);
                     calc > Yoffset ? Yoffset = calc : Yoffset;
                 }
+                if(new_y < 0){
+                    new_y < Yoffset ? Yoffset = new_y : Yoffset; 
+                }
             }
         }
 
@@ -405,6 +413,7 @@ class Piece {
             // a kick or 2  in upwards dierection will occur bringing the piece up
             for (let kick = 0; kick < Math.abs(Yoffset); kick++) {
                 if ((Yoffset + ROW) >= ROW) this.goTo(DIRECTION.up);
+                if (Yoffset < 0) this.goTo(DIRECTION.down);
             }
         }
         if (Xoffset) {
