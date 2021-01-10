@@ -36,9 +36,7 @@ const mod = (dividend, divisor) => {
 //Create Game board
 const createGameBoard = () => {
     gameBoard = [...Array(ROW)].map(() => Array(COL).fill(0));
-    // gameBoard[1][0] = 2;
-    // gameBoard[1][1] = 2;
-    // gameBoard[1][2] = 2;    
+      
 };
 
 const drawGameBoard = (rows, cols) => {
@@ -189,13 +187,16 @@ class Piece {
 
     pullRowsDown(from){
         console.log(`pullRowsDown() ${from}`)
-        for(let r = from; r > 0; r--){
+        for(let r = from; r >= 0; r--){
             for(let c = 0; c < COL; c++){
-                gameBoard[r][c] = gameBoard[r-1][c]  
+                //if row has a preceding row then switch current row by the preceding one
+                //then if the row is the first row (0) then there is no rows before, so we set to zeros
+                //the entire row
+                r > 0 ? gameBoard[r][c] = gameBoard[r-1][c] : gameBoard[r][c] = 0 ;  
             }
             
         }
-        // console.table(gameBoard)
+        console.table(gameBoard)
     }
 
     merge() {
@@ -577,6 +578,8 @@ const init = () => {
     level = 1;
     score = 0;
     lines = 0;
+    gameBoard[0][0] = 1;
+    gameBoard[0][1] = 1;
     drawGameBoard(ROW, COL)
     piece = getRandomPiece()
     piece.drawPiece(); 
