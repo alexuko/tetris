@@ -13,6 +13,7 @@ canvas.width = COL * SQ;
 canvas.height = ROW * SQ;
 let empty = 0;
 let level = 0;
+let score = 0;
 
 let gameBoard;
 let piece;
@@ -37,12 +38,15 @@ const createGameBoard = () => {
     gameBoard = [...Array(ROW)].map(() => Array(COL).fill(0));    
 };
 
-const drawGameBoard = () => {
-    gameBoard.forEach((row, indexRow) => { //iterate through all rows 0 - 19, then
-        row.forEach((col, indexCol) => { //for each row, iterate through each column 
-            drawSquare(indexCol, indexRow); // and then, draw a square            
-        });
-    });
+const drawGameBoard = (cols, rows) => {
+    //iterate through all rows 
+    for(let r = 0; r < rows; r++){
+        //now iterate through each column from each row
+        for(let c = 0; c < cols; c++){
+            // and then, draw a square            
+            drawSquare(c,r);
+        }
+    }
 };
 
 const drawSquare = (x, y, color = null) => {
@@ -53,7 +57,7 @@ const drawSquare = (x, y, color = null) => {
     
     const xPos_board = SQ * x;
     const yPos_board = SQ * y;
-
+    // console.log(gameBoard[y][x])
     ctx.fillStyle = color ? `hsl(${color[0]} ${color[1]}% ${color[2]}% / ${color[3]}%)` : `hsl(0 0% 10% / 20%)`;
     ctx.fillRect(xPos_board, yPos_board, SQ, SQ);
     ctx.strokeStyle = color ? `hsl(${color[0]} ${color[1]}% 30% / 90%)` : `hsl(0 0% 0% / 100%)`;
@@ -93,8 +97,8 @@ class Piece {
         // I & O spawn middle AND  J,L,S,Z & T  spawn rounded to the left.
         this.x = 3; 
         this.y = this.number < 5 ? 0 : -1; 
-        console.log(`Tetromino: ${this.number}`)
-        console.log(`x: ${this.x} y: ${this.y}`)
+        // console.log(`Tetromino: ${this.number}`)
+        // console.log(`x: ${this.x} y: ${this.y}`)
         this.position = 0;
         this.activeTetrominoe = this.tetrominoe[this.position]; //tetrominow with current position
 
@@ -144,6 +148,42 @@ class Piece {
         if(dir[0] === 'down' )  this.y += 1;        
     }
 
+    checkFullRows(row = ROW) {
+        let fullRows = 0;
+        for (let r = row - 1; r >= 0; r--) {
+            let occupied = 0;
+            for (let c = 0; c < COL; c++) {
+                if (gameBoard[r][c] === empty) break; // if there is an empty space on the row, then break and check next row
+
+                occupied++;
+
+                if (occupied === COL) {
+                    console.log('*******Now********')
+                    console.log(`r:${r}`)
+                    fullRows += 1;
+                    //remove row from the 
+                    //move rows down
+                    //increment score
+                    this.pullRowsDown(r);
+                    this.checkFullRows(r);                    
+                    fullRows < 4 ? score += fullRows * 10 : score += fullRows * 20;
+                }
+
+            }
+        }
+        console.log(`score ${score}`)
+    }   
+    pullRowsDown(from){
+        console.log(`pullRowsDown() ${from}`)
+        for(let r = from; r > 0; r--){
+            for(let c = 0; c < COL; c++){
+                gameBoard[r][c] = gameBoard[r-1][c]  
+            }
+            
+        }
+        console.table(gameBoard)
+    }
+
     merge() {
         try{
             for (let r = 0; r < this.activeTetrominoe.length; r++) { //loop through all of the rows
@@ -166,6 +206,8 @@ class Piece {
                 this.drawPiece()
             }else{
                 this.merge()
+                this.checkFullRows();
+                
                 piece = getRandomPiece()         
                 piece.drawPiece();
             }
@@ -215,7 +257,11 @@ class Piece {
     
     rotate(clockwise = false, rotTimes = 0) {
         try{
-            console.log('rotTimes '+ rotTimes)        
+            console.log('rotTimes '+ rotTimes)
+            const initialPosition = this.position;
+            const initial_X = this.x;
+            const initial_Y = this.y;
+
             // Check if the piece will rotate clockwise or counterclockwise
             let rotation = clockwise ? 1 : -1;
             // If this is the first time that the piece rotates then erase the piece
@@ -243,7 +289,21 @@ class Piece {
             // if piece overlapped then fix overlap
             this.fixOverlap();
             // if piece still overlapping then rotate piece until a suitable nerby space for it 
-            if (this.piecesOverlapped() && rotTimes <= 8 ) this.rotate(rotation,rotTimes)
+            if(this.piecesOverlapped()){
+                rotTimes ===  4 && this.x + (this.activeTetrominoe.length - 1) < COL ? this.goTo(DIRECTION.right) : this.goTo(DIRECTION.left);
+                rotTimes ===  8 && this.y + (this.activeTetrominoe.length - 1) < ROW ? this.goTo(DIRECTION.down) : this.goTo(DIRECTION.up);
+                rotTimes ===  12 && this.x > COL ? this.goTo(DIRECTION.left) : this.goTo(DIRECTION.right);
+                rotTimes ===  16 && this.y >= 0 ? this.goTo(DIRECTION.up) : this.goTo(DIRECTION.down);
+                if(rotTimes ===  20){// do not do anything and leave piece on its original position
+                    console.log('initial position')
+                    this.x = initial_X;
+                    this.y = initial_Y;
+                    this.position = initialPosition;
+                    this.drawPiece()
+                    return;
+                } 
+                this.rotate(rotation,rotTimes);
+            } 
             
             // Once piece does not overlap then redraw piece on the Gameboard
             this.drawPiece()
@@ -269,7 +329,6 @@ class Piece {
                     // console.log(`yC:${new_y} xC:${new_x}`)
                     // console.log(`last ${last}`)
                     // console.log(`board ${gameBoard[new_y][new_x]}  so ${gameBoard[new_y][new_x]}`)
-                    // *****************   I have to check overlap for the "I" piece  ************************
                     if (c === 0 && this.activeTetrominoe[r][0] !== empty && gameBoard[new_y][new_x] !== empty) {
                         console.error(`hit left`)
                         this.goTo(DIRECTION.right);
@@ -282,13 +341,15 @@ class Piece {
                         console.error(`hit bottom`)
                         this.goTo(DIRECTION.up)
                     }
+                    else if (r === 0 && this.activeTetrominoe[0][c] !== empty && gameBoard[new_y][new_x] !== empty) {
+                        console.error(`hit top`)
+                        this.goTo(DIRECTION.down)
+                    }
               
                 }
             }
-            
-
-    
     }
+
     piecesOverlapped(){
         try{
             let new_x, new_y;
@@ -298,7 +359,9 @@ class Piece {
                     new_x = this.x + c; // New x (column) position from each square of the tetrominoe
                     new_y = this.y + r; // New y (row)    position from each square of the tetrominoe
                     // if any of the squares lands on a non empty position in the board then, it overlapped
-                    if(gameBoard[new_y][new_x] !== empty) {// If its = 1
+                    // or piece 
+                    if (gameBoard[new_y][new_x] !== empty || // If its = 1
+                        new_y < 0 || new_y >= ROW) { // if piece goes beyound ceiling or floor 
                         console.log('pieces overlapped')
                         return true
                     }
@@ -331,12 +394,10 @@ class Piece {
                         // console.log(`yC:${yCoord} xC:${xCoord}`)
                         // console.log('board '+ (gameBoard[yCoord][xCoord] !== empty))
                         // Check if any SQUARE that builds up the tetrominoe is out of bounds 
-                        // or overlaps an already occupied space
-                        if (yCoord >= ROW   ||
-                            yCoord < 0      || // if new yCoord is (Grater or Equals) than ROW(20)  
-                            xCoord < 0      || // if xCoord is (less) than the left wall (0)
-                            xCoord >= COL   ){
-                                console.log(`collision()/rotate wall or floor collision`)
+                        // or overlaps an already occupied space                        
+                        if (yCoord < 0 || yCoord >= ROW ||   
+                            xCoord < 0 || xCoord >= COL){
+                                console.warn(`Collided`)
                                 return true;
                             }  
 
@@ -353,8 +414,7 @@ class Piece {
                         // Add the direction value to the xCoord (1 OR -1) we wanna move to,
                         // So we can check if that space within the gameboard is either occupied Or out of bounds. 
                         xCoord += dir[1];
-                        // if (gameBoard[yCoord][xCoord] === undefined || gameBoard[yCoord][xCoord] !== empty) return true;
-                        
+                        // if (gameBoard[yCoord][xCoord] === undefined || gameBoard[yCoord][xCoord] !== empty) return true;                        
                         if (xCoord < 0 || xCoord >= COL || gameBoard[yCoord][xCoord] !== empty) return true;
                         if (xCoord > 0 || xCoord < COL) continue;
                     }
@@ -410,7 +470,8 @@ class Piece {
 
         if (Yoffset) {
             console.log("Y OFFSET");
-            // a kick or 2  in upwards dierection will occur bringing the piece up
+            // a kick or 2  in upwards dierection will occur bringing the piece up 
+            // a kick in downwards dierection will occur bringing the piece down 
             for (let kick = 0; kick < Math.abs(Yoffset); kick++) {
                 if ((Yoffset + ROW) >= ROW) this.goTo(DIRECTION.up);
                 if (Yoffset < 0) this.goTo(DIRECTION.down);
@@ -484,6 +545,7 @@ const keyControl = (e) => {
             }
             if (e.key === "ArrowDown" || e.keyCode === 40) {
                 piece.moveDown();
+                start = Date.now();
             }
         }
         if (e.type === "keyup") {
@@ -495,11 +557,11 @@ const keyControl = (e) => {
 
 const init = () => {
     createGameBoard();
-    drawGameBoard();
     gameOver = false;
     level = 1;
+    drawGameBoard(COL,ROW)
     piece = getRandomPiece()
-    piece.drawPiece();    
+    piece.drawPiece(); 
     // update()
 }
 ["keydown", "keyup"].forEach(e => window.addEventListener(e, keyControl));
