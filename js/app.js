@@ -12,9 +12,9 @@ const ROW = 22;
 canvas.width = COL * SQ;
 canvas.height = ROW * SQ;
 let empty = 0;
-let level = 0;
-let score = 0;
-
+let level;
+let score;
+let lines;
 let gameBoard;
 let piece;
 let gameOver = true;
@@ -35,32 +35,42 @@ const mod = (dividend, divisor) => {
 };
 //Create Game board
 const createGameBoard = () => {
-    gameBoard = [...Array(ROW)].map(() => Array(COL).fill(0));    
+    gameBoard = [...Array(ROW)].map(() => Array(COL).fill(0));
+    // gameBoard[1][0] = 2;
+    // gameBoard[1][1] = 2;
+    // gameBoard[1][2] = 2;    
 };
 
-const drawGameBoard = (cols, rows) => {
+const drawGameBoard = (rows, cols) => {
     //iterate through all rows 
+
     for(let r = 0; r < rows; r++){
         //now iterate through each column from each row
         for(let c = 0; c < cols; c++){
-            // and then, draw a square            
-            drawSquare(c,r);
+            // and then, draw a square         
+            const color = getColor(gameBoard[r][c]);   
+            // console.log(color)
+            drawSquare(c,r,color);
+
+            
         }
     }
 };
 
-const drawSquare = (x, y, color = null) => {
+const drawSquare = (x, y, color) => {
     // //Draw a square
     // console.log(color)
+    
     ctx.lineWidth = SQ / 20 // stroke width
     const stroke = ctx.lineWidth;
     
     const xPos_board = SQ * x;
     const yPos_board = SQ * y;
     // console.log(gameBoard[y][x])
-    ctx.fillStyle = color ? `hsl(${color[0]} ${color[1]}% ${color[2]}% / ${color[3]}%)` : `hsl(0 0% 10% / 20%)`;
+    ctx.clearRect(xPos_board, yPos_board, SQ, SQ);
+    ctx.fillStyle = color[0] !== 0  ? `hsl(${color[0]} ${color[1]}% ${color[2]}% / ${color[3]}%)` : `hsl(${color[0]} ${color[1]}% ${color[2]}% / ${color[3]}%)` ;
     ctx.fillRect(xPos_board, yPos_board, SQ, SQ);
-    ctx.strokeStyle = color ? `hsl(${color[0]} ${color[1]}% 30% / 90%)` : `hsl(0 0% 0% / 100%)`;
+    ctx.strokeStyle = color[0] !== 0 ? `hsl(${color[0]} ${color[1]}% 30% / 90%)` : `hsl(${color[0]} ${color[1]}% 0% / 100%)`;
     ctx.strokeRect(xPos_board + (stroke / 2), yPos_board + (stroke / 2), SQ - stroke, SQ - stroke);
 };
 
@@ -74,6 +84,7 @@ const undrawSquare = (x, y) => {
 
 const getColor = pick => {
     const colors = [
+        [0, 0, 10, 20],  // empty 
         [276, 94, 61, 100],  // T-tetromino 
         [31, 94, 48, 100],  // L-tetromino
         [230, 98, 50, 100],  // J-tetromino
@@ -119,7 +130,7 @@ class Piece {
                             return;// so this does not overdraw the previous piece
 
                         }
-                        drawSquare(this.x + cIndex, this.y + rIndex, getColor(this.number)); //draw a square
+                        drawSquare(this.x + cIndex, this.y + rIndex, this.color); //draw a square
                     }
                 });
             });
@@ -135,7 +146,7 @@ class Piece {
             row.forEach((col, cIndex) => {
                 if (this.activeTetrominoe[rIndex][cIndex]) { //if there is a "1" in the piece matrix
                     undrawSquare(this.x + cIndex, this.y + rIndex); //draw a square
-                    drawSquare(this.x + cIndex, this.y + rIndex); //draw a square
+                    drawSquare(this.x + cIndex, this.y + rIndex, getColor(0)); //draw a square
                 }
             });
         });
@@ -148,9 +159,9 @@ class Piece {
         if(dir[0] === 'down' )  this.y += 1;        
     }
 
-    checkFullRows(row = ROW) {
+    checkFullRows() {
         let fullRows = 0;
-        for (let r = row - 1; r >= 0; r--) {
+        for (let r = ROW - 1; r >= 0; r--) {
             let occupied = 0;
             for (let c = 0; c < COL; c++) {
                 if (gameBoard[r][c] === empty) break; // if there is an empty space on the row, then break and check next row
@@ -165,14 +176,17 @@ class Piece {
                     //move rows down
                     //increment score
                     this.pullRowsDown(r);
-                    this.checkFullRows(r);                    
-                    fullRows < 4 ? score += fullRows * 10 : score += fullRows * 20;
+                    this.checkFullRows();                    
+                    // fullRows < 4 ? score += fullRows * 10 : score += fullRows * 20;
                 }
-
+                
             }
         }
-        console.log(`score ${score}`)
-    }   
+        lines += fullRows;
+        fullRows < 4 ? score += fullRows * 10 : score += fullRows * 20;
+        console.log(`score ${score}, Lines ${lines}`)
+    }
+
     pullRowsDown(from){
         console.log(`pullRowsDown() ${from}`)
         for(let r = from; r > 0; r--){
@@ -181,7 +195,7 @@ class Piece {
             }
             
         }
-        console.table(gameBoard)
+        // console.table(gameBoard)
     }
 
     merge() {
@@ -189,7 +203,7 @@ class Piece {
             for (let r = 0; r < this.activeTetrominoe.length; r++) { //loop through all of the rows
                 for (let c = 0; c < this.activeTetrominoe[r].length; c++) { //for each row loop through all of the columns
                     if (!this.activeTetrominoe[r][c]) continue;
-                    gameBoard[this.y + r][this.x + c] = 1;
+                    gameBoard[this.y + r][this.x + c] = this.activeTetrominoe[r][c];
                 }
             }
 
@@ -207,7 +221,9 @@ class Piece {
             }else{
                 this.merge()
                 this.checkFullRows();
-                
+                // console.table(gameBoard)
+                // console.table(gameBoard)
+                drawGameBoard(ROW,COL)
                 piece = getRandomPiece()         
                 piece.drawPiece();
             }
@@ -499,9 +515,9 @@ class Piece {
 const getRandomPiece = () => {
     // rand will hold a random number between 0 and the bag of tetrominoes lenght 
     // and return a number. Math.floor() will convert the double to the nearest lower int 
-    const rand = Math.floor( Math.random() * tetrominoes.length);
-    // console.log(`piece number ${rand}`)
-    return new Piece(tetrominoes[rand],getColor(rand),rand)
+    //getColor(rand + 1) >> + 1 is because in the array of colors the position 0 is saved for the empty space color (blackish)  
+    const rand = Math.floor( Math.random() * tetrominoes.length) ;
+    return new Piece(tetrominoes[rand],getColor(rand + 1),rand)
 }
 
 
@@ -559,7 +575,9 @@ const init = () => {
     createGameBoard();
     gameOver = false;
     level = 1;
-    drawGameBoard(COL,ROW)
+    score = 0;
+    lines = 0;
+    drawGameBoard(ROW, COL)
     piece = getRandomPiece()
     piece.drawPiece(); 
     // update()
