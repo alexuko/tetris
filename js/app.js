@@ -1,22 +1,20 @@
-import {
-    tetrominoes
-} from "./module/tetrominoes";
+import {tetrominoes,SQ,ROW,COL} from "./module/tetrominoes";
 
-const canvas = document.querySelector("canvas");
-const ctx = canvas.getContext("2d");
-// Canvas measures
-const SQ = 20;
-
-const COL = 10;
-const ROW = 22;
+const nextPieceCanvas = document.querySelector("canvas#nextPiece");
+const nextPieceCtx = nextPieceCanvas.getContext("2d");
+//Gameboard Canvas
+const canvas = document.querySelector("canvas#tetris");
+const ctxGameBoard = canvas.getContext("2d");
 canvas.width = COL * SQ;
 canvas.height = ROW * SQ;
+
 let empty = 0;
 let level;
 let score;
 let lines;
 let gameBoard;
 let piece;
+let nextPiece = null;
 let gameOver = true;
 let start = Date.now();
 
@@ -39,7 +37,7 @@ const createGameBoard = () => {
       
 };
 
-const drawGameBoard = (rows, cols) => {
+const drawGameBoard = (ctx,rows, cols) => {
     //iterate through all rows 
 
     for(let r = 0; r < rows; r++){
@@ -48,14 +46,29 @@ const drawGameBoard = (rows, cols) => {
             // and then, draw a square         
             const color = getColor(gameBoard[r][c]);   
             // console.log(color)
-            drawSquare(c,r,color);
+            drawSquare(ctx ,c,r,color);
+
+            
+        }
+    }
+};
+const eraseGameBoard = (ctx,rows, cols) => {
+    //iterate through all rows 
+
+    for(let r = 0; r < rows; r++){
+        //now iterate through each column from each row
+        for(let c = 0; c < cols; c++){
+            // and then, draw a square         
+            const color = getColor(gameBoard[r][c]);   
+            // console.log(color)
+            undrawSquare(ctx ,c,r,color);
 
             
         }
     }
 };
 
-const drawSquare = (x, y, color) => {
+const drawSquare = (ctx, x, y, color) => {
     // //Draw a square
     // console.log(color)
     
@@ -72,7 +85,7 @@ const drawSquare = (x, y, color) => {
     ctx.strokeRect(xPos_board + (stroke / 2), yPos_board + (stroke / 2), SQ - stroke, SQ - stroke);
 };
 
-const undrawSquare = (x, y) => {
+const undrawSquare = (ctx, x, y) => {
     // Undraw a square
     const xPos_board = SQ * x;
     const yPos_board = SQ * y;
@@ -113,7 +126,7 @@ class Piece {
 
     }
 
-    drawPiece() {
+    drawPiece(ctx) {
         try {
             this.activeTetrominoe.forEach((row, rIndex) => {
                 // console.log(this.activeTetrominoe[rIndex])
@@ -128,7 +141,7 @@ class Piece {
                             return;// so this does not overdraw the previous piece
 
                         }
-                        drawSquare(this.x + cIndex, this.y + rIndex, this.color); //draw a square
+                        drawSquare(ctx, this.x + cIndex, this.y + rIndex, this.color); //draw a square
                     }
                 });
             });
@@ -139,12 +152,12 @@ class Piece {
         }
     }
 
-    erasePiece() {
+    erasePiece(ctx) {
         this.activeTetrominoe.forEach((row, rIndex) => {
             row.forEach((col, cIndex) => {
                 if (this.activeTetrominoe[rIndex][cIndex]) { //if there is a "1" in the piece matrix
-                    undrawSquare(this.x + cIndex, this.y + rIndex); //draw a square
-                    drawSquare(this.x + cIndex, this.y + rIndex, getColor(0)); //draw a square
+                    undrawSquare(ctx, this.x + cIndex, this.y + rIndex); //draw a square
+                    drawSquare(ctx, this.x + cIndex, this.y + rIndex, getColor(0)); //draw a square
                 }
             });
         });
@@ -216,17 +229,16 @@ class Piece {
     moveDown() {
         if(!gameOver){
             if (!this.collision(DIRECTION.down)){
-                this.erasePiece()
+                this.erasePiece(ctxGameBoard)
                 this.goTo(DIRECTION.down)
-                this.drawPiece()
+                this.drawPiece(ctxGameBoard)
             }else{
                 this.merge()
                 this.checkFullRows();
-                // console.table(gameBoard)
-                // console.table(gameBoard)
-                drawGameBoard(ROW,COL)
-                piece = getRandomPiece()         
-                piece.drawPiece();
+                drawGameBoard(ctxGameBoard, ROW,COL)
+                piece = getRandomPiece();
+                piece.drawPiece(ctxGameBoard);
+                getNextPiece();
             }
         }else console.log('game over' + gameOver);
     }
@@ -234,7 +246,7 @@ class Piece {
 
     moveUp() {
         if (!this.collision(DIRECTION.up)) {
-            this.erasePiece()
+            this.erasePiece(ctxGameBoard)
             this.goTo(DIRECTION.up)
         }
     }
@@ -242,9 +254,9 @@ class Piece {
     moveRight(rotateAction = false) {
         if (!rotateAction) {
             if (!this.collision(DIRECTION.right)) {//check if there is no collision and if there is not,
-                this.erasePiece()
+                this.erasePiece(ctxGameBoard)
                 this.goTo(DIRECTION.right);
-                this.drawPiece()
+                this.drawPiece(ctxGameBoard)
             }
             
         } else {
@@ -260,10 +272,10 @@ class Piece {
         //then move tetrominoe to the left
         if (!rotateAction) {
             if (!this.collision(DIRECTION.left)) {
-                this.erasePiece()
+                this.erasePiece(ctxGameBoard)
                 // if (!this.hitWall(DIRECTION.left)) {
                 this.goTo(DIRECTION.left);
-                this.drawPiece()
+                this.drawPiece(ctxGameBoard)
             }
         } else {
             this.goTo(DIRECTION.left)
@@ -282,7 +294,7 @@ class Piece {
             // Check if the piece will rotate clockwise or counterclockwise
             let rotation = clockwise ? 1 : -1;
             // If this is the first time that the piece rotates then erase the piece
-            if(rotTimes === 0) this.erasePiece();
+            if(rotTimes === 0) this.erasePiece(ctxGameBoard);
             // Increment the number of rotation times
             rotTimes++;
             // position 0 - 1 = -1 + 4 = 3 % 4 = 3
@@ -300,7 +312,7 @@ class Piece {
             // Check that piece did not overlapped with another piece after rotation
             if (!this.piecesOverlapped()) {
                 // If it did not then redraw the piece and finish method
-                this.drawPiece()
+                this.drawPiece(ctxGameBoard)
                 return;
             }
             // if piece overlapped then fix overlap
@@ -316,14 +328,14 @@ class Piece {
                     this.x = initial_X;
                     this.y = initial_Y;
                     this.position = initialPosition;
-                    this.drawPiece()
+                    this.drawPiece(ctxGameBoard)
                     return;
                 } 
                 this.rotate(rotation,rotTimes);
             } 
             
             // Once piece does not overlap then redraw piece on the Gameboard
-            this.drawPiece()
+            this.drawPiece(ctxGameBoard)
         }catch(e){
             console.log(e)
         }
@@ -513,15 +525,33 @@ class Piece {
     }
 
 }
+
+
 const getRandomPiece = () => {
-    // rand will hold a random number between 0 and the bag of tetrominoes lenght 
-    // and return a number. Math.floor() will convert the double to the nearest lower int 
-    //getColor(rand + 1) >> + 1 is because in the array of colors the position 0 is saved for the empty space color (blackish)  
-    const rand = Math.floor( Math.random() * tetrominoes.length) ;
-    return new Piece(tetrominoes[rand],getColor(rand + 1),rand)
+    if(nextPiece === null) {
+        // rand will hold a random number between 0 and the bag of tetrominoes lenght 
+        // and return a number. Math.floor() will convert the double to the nearest lower int 
+        //getColor(rand + 1) >> + 1 is because in the array of colors the position 0 is saved for the empty space color (blackish)  
+        const rand = Math.floor( Math.random() * tetrominoes.length) ;
+        console.log(rand)
+        console.log('is new piece')
+        return new Piece(tetrominoes[rand],getColor(rand + 1),rand)
+        
+        
+    }
+    console.log('is from next')
+    return new Piece(tetrominoes[nextPiece.number],getColor(nextPiece.number + 1),nextPiece.number)
 }
 
+const getNextPiece = () => {
+    eraseGameBoard(nextPieceCtx,4, 4)
+    nextPiece = null;// set it to null will help to generate a new random piece
+    nextPiece = getRandomPiece()
+    nextPiece.x = 0;
+    nextPiece.y = 0;
+    nextPiece.drawPiece(nextPieceCtx)
 
+}
 
 
 
@@ -578,10 +608,14 @@ const init = () => {
     level = 1;
     score = 0;
     lines = 0;
-    drawGameBoard(ROW, COL)
+    drawGameBoard(ctxGameBoard,ROW, COL)
     piece = getRandomPiece()
-    piece.drawPiece(); 
+    piece.drawPiece(ctxGameBoard);
+    getNextPiece()
+
+
     // update()
 }
 ["keydown", "keyup"].forEach(e => window.addEventListener(e, keyControl));
 init()
+

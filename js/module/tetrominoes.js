@@ -1,3 +1,8 @@
+// Canvas measures
+export const COL = 10;
+export const ROW = 22;
+export const SQ = 20;
+
 export let tetrominoes = [
     // [0] T-tetrominoe
     [
@@ -117,7 +122,6 @@ export let tetrominoes = [
             [5, 0, 0]
         ],
     ],
-    // [5] O-tetrominoe
     [   
         [   
             [0, 0, 0, 0],
