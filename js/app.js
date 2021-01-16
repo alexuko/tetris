@@ -5,7 +5,7 @@ import {
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
 // Canvas measures
-const SQ = 30;
+const SQ = 20;
 
 const COL = 10;
 const ROW = 22;
@@ -578,8 +578,6 @@ const init = () => {
     level = 1;
     score = 0;
     lines = 0;
-    gameBoard[0][0] = 1;
-    gameBoard[0][1] = 1;
     drawGameBoard(ROW, COL)
     piece = getRandomPiece()
     piece.drawPiece(); 
