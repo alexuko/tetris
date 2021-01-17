@@ -1,4 +1,5 @@
 import {tetrominoes,SQ,ROW,COL} from "./module/tetrominoes";
+import Records from './module/records'
 
 const nextPieceCanvas = document.querySelector("canvas#nextPiece");
 const nextPieceCtx = nextPieceCanvas.getContext("2d");
@@ -14,9 +15,11 @@ let score;
 let lines;
 let gameBoard;
 let piece;
+let records;
 let nextPiece = null;
 let gameOver = true;
 let start = Date.now();
+
 
 const DIRECTION = {
     up:     ["up", -1],
@@ -195,7 +198,8 @@ class Piece {
         }
         lines += fullRows;
         fullRows < 4 ? score += fullRows * 10 : score += fullRows * 20;
-        console.log(`score ${score}, Lines ${lines}`)
+        // console.log(`score ${score}, Lines ${lines}`)
+        records.updateUIValues(score,level,lines)
     }
 
     pullRowsDown(from){
@@ -236,6 +240,7 @@ class Piece {
                 this.merge()
                 this.checkFullRows();
                 drawGameBoard(ctxGameBoard, ROW,COL)
+                
                 piece = getRandomPiece();
                 piece.drawPiece(ctxGameBoard);
                 getNextPiece();
@@ -533,13 +538,13 @@ const getRandomPiece = () => {
         // and return a number. Math.floor() will convert the double to the nearest lower int 
         //getColor(rand + 1) >> + 1 is because in the array of colors the position 0 is saved for the empty space color (blackish)  
         const rand = Math.floor( Math.random() * tetrominoes.length) ;
-        console.log(rand)
-        console.log('is new piece')
+        // console.log(rand)
+        // console.log('is new piece')
         return new Piece(tetrominoes[rand],getColor(rand + 1),rand)
         
         
     }
-    console.log('is from next')
+    // console.log('is from next')
     return new Piece(tetrominoes[nextPiece.number],getColor(nextPiece.number + 1),nextPiece.number)
 }
 
@@ -608,6 +613,8 @@ const init = () => {
     level = 1;
     score = 0;
     lines = 0;
+    records = new Records();
+    records.setInitialUIvalues()
     drawGameBoard(ctxGameBoard,ROW, COL)
     piece = getRandomPiece()
     piece.drawPiece(ctxGameBoard);
