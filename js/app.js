@@ -1,21 +1,19 @@
-import {tetrominoes,SQ,ROW,COL} from "./module/tetrominoes";
-import Records from './module/records'
+import {tetrominoes,SQ,ROW,COL, getColor} from "./module/tetrominoes";
+import Gameboard from './module/gameBoard';
+import Brush from './module/brush';
+import Records from './module/records';
 
 const nextPieceCanvas = document.querySelector("canvas#nextPiece");
 const nextPieceCtx = nextPieceCanvas.getContext("2d");
+
 //Gameboard Canvas
 const canvas = document.querySelector("canvas#tetris");
 const ctxGameBoard = canvas.getContext("2d");
 canvas.width = COL * SQ;
 canvas.height = ROW * SQ;
 
-let empty = 0;
-let level;
-let score;
-let lines;
-let gameBoard;
-let piece;
-let records;
+const empty = 0;
+let level,score,lines, gameBoard, brush, piece, records;
 let nextPiece = null;
 let gameOver = true;
 let start = Date.now();
@@ -29,15 +27,11 @@ const DIRECTION = {
     rotate: ["rotate", 0]
 
 };
+
 // MOD of positive or negative numbers
 // returns remainder of dividend by divisor
 const mod = (dividend, divisor) => {
     return (dividend % divisor + divisor) % divisor;
-};
-//Create Game board
-const createGameBoard = () => {
-    gameBoard = [...Array(ROW)].map(() => Array(COL).fill(0));
-      
 };
 
 const drawGameBoard = (ctx,rows, cols) => {
@@ -49,12 +43,13 @@ const drawGameBoard = (ctx,rows, cols) => {
             // and then, draw a square         
             const color = getColor(gameBoard[r][c]);   
             // console.log(color)
-            drawSquare(ctx ,c,r,color);
+            brush.drawSquare(ctx ,c,r,color);
 
             
         }
     }
 };
+
 const eraseGameBoard = (ctx,rows, cols) => {
     //iterate through all rows 
 
@@ -64,54 +59,12 @@ const eraseGameBoard = (ctx,rows, cols) => {
             // and then, draw a square         
             const color = getColor(gameBoard[r][c]);   
             // console.log(color)
-            undrawSquare(ctx ,c,r,color);
+            brush.undrawSquare(ctx ,c,r,color);
 
             
         }
     }
 };
-
-const drawSquare = (ctx, x, y, color) => {
-    // //Draw a square
-    // console.log(color)
-    
-    ctx.lineWidth = SQ / 20 // stroke width
-    const stroke = ctx.lineWidth;
-    
-    const xPos_board = SQ * x;
-    const yPos_board = SQ * y;
-    // console.log(gameBoard[y][x])
-    ctx.clearRect(xPos_board, yPos_board, SQ, SQ);
-    ctx.fillStyle = color[0] !== 0  ? `hsl(${color[0]} ${color[1]}% ${color[2]}% / ${color[3]}%)` : `hsl(${color[0]} ${color[1]}% ${color[2]}% / ${color[3]}%)` ;
-    ctx.fillRect(xPos_board, yPos_board, SQ, SQ);
-    ctx.strokeStyle = color[0] !== 0 ? `hsl(${color[0]} ${color[1]}% 30% / 90%)` : `hsl(${color[0]} ${color[1]}% 0% / 100%)`;
-    ctx.strokeRect(xPos_board + (stroke / 2), yPos_board + (stroke / 2), SQ - stroke, SQ - stroke);
-};
-
-const undrawSquare = (ctx, x, y) => {
-    // Undraw a square
-    const xPos_board = SQ * x;
-    const yPos_board = SQ * y;
-    ctx.clearRect(xPos_board, yPos_board, SQ, SQ);
-};
-
-
-const getColor = pick => {
-    const colors = [
-        [0, 0, 10, 20],  // empty 
-        [276, 94, 61, 100],  // T-tetromino 
-        [31, 94, 48, 100],  // L-tetromino
-        [230, 98, 50, 100],  // J-tetromino
-        [100, 60, 48, 100],   // S-tetromino
-        [356, 100, 40, 100], // Z-tetromino
-        [58, 85, 52, 100],  // O-tetromino
-        [192, 44, 85, 100]  // I-tetromino 
-    ]
-    return colors[pick];
-}
-
-
-
 
 class Piece {
     constructor(tetrominoe, color, number) {
@@ -139,12 +92,12 @@ class Piece {
                     // console.log(gameBoard[this.y+rIndex][this.x+cIndex])
                     if(gameBoard[this.y + rIndex][this.x + cIndex] !== empty){
                             //move the position of the piece 1 space up, it does not draw it on top of previous
-                            console.log('gameover')
                             gameOver = true;  
+                            alert('gameover')
                             return;// so this does not overdraw the previous piece
 
                         }
-                        drawSquare(ctx, this.x + cIndex, this.y + rIndex, this.color); //draw a square
+                        brush.drawSquare(ctx, this.x + cIndex, this.y + rIndex, this.color); //draw a square
                     }
                 });
             });
@@ -159,8 +112,8 @@ class Piece {
         this.activeTetrominoe.forEach((row, rIndex) => {
             row.forEach((col, cIndex) => {
                 if (this.activeTetrominoe[rIndex][cIndex]) { //if there is a "1" in the piece matrix
-                    undrawSquare(ctx, this.x + cIndex, this.y + rIndex); //draw a square
-                    drawSquare(ctx, this.x + cIndex, this.y + rIndex, getColor(0)); //draw a square
+                    brush.undrawSquare(ctx, this.x + cIndex, this.y + rIndex); //draw a square
+                    brush.drawSquare(ctx, this.x + cIndex, this.y + rIndex, getColor(0)); //draw a square
                 }
             });
         });
@@ -199,7 +152,9 @@ class Piece {
         lines += fullRows;
         fullRows < 4 ? score += fullRows * 10 : score += fullRows * 20;
         // console.log(`score ${score}, Lines ${lines}`)
-        records.updateUIValues(score,level,lines)
+        records.setLines(lines);
+        records.setScore(score);
+        records.setLevel(level);
     }
 
     pullRowsDown(from){
@@ -561,6 +516,7 @@ const getNextPiece = () => {
 
 
 const update = () => {
+    
     if(!gameOver){
         let now = Date.now();
         let timeCounter = now - start;
@@ -578,8 +534,8 @@ const update = () => {
 
 const keyControl = (e) => {
     if(!gameOver){
-        // console.log(e)
         if (e.type === "keydown") {
+            // console.log(e.code)
             if (e.key === "KeyZ" || e.keyCode === 90) {
                 piece.rotate(false);
             }
@@ -588,41 +544,52 @@ const keyControl = (e) => {
             }
             if (e.key === "ArrowRight" || e.keyCode === 39) {
                 piece.moveRight();
-                start = Date.now();
+                // start = Date.now();
                 
             }
             if (e.key === "ArrowLeft" || e.keyCode === 37) {
                 piece.moveLeft();
-                start = Date.now();
+                // start = Date.now();
             }
             if (e.key === "ArrowDown" || e.keyCode === 40) {
                 piece.moveDown();
-                start = Date.now();
+                // start = Date.now();
             }
         }
         if (e.type === "keyup") {
             // console.log(e)
+            if (
+                (e.key === "ArrowRight" || e.keyCode === 39)
+            ||  (e.key === "ArrowLeft" || e.keyCode === 37)  
+            ||  (e.key === "ArrowDown" || e.keyCode === 40)           
+            ) {
+                start = Date.now();
+                
+            }
+            
         }
 
     }
 };
 
 const init = () => {
-    createGameBoard();
+    // createGameBoard();
+    let GB = new Gameboard(ROW,COL);
+    gameBoard = GB.createGameBoard();
+    brush = new Brush(SQ);
     gameOver = false;
-    level = 1;
-    score = 0;
-    lines = 0;
-    records = new Records();
+    records = new Records('alex');
+    score = records.getScore();
+    lines = records.getLines();
+    level = records.getLevel();
     records.setInitialUIvalues()
     drawGameBoard(ctxGameBoard,ROW, COL)
     piece = getRandomPiece()
     piece.drawPiece(ctxGameBoard);
     getNextPiece()
-
-
     // update()
 }
+
 ["keydown", "keyup"].forEach(e => window.addEventListener(e, keyControl));
 init()
 

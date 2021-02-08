@@ -1,31 +1,47 @@
-let playerUI = document.querySelector('strong.current_player');
-let levelUI = document.querySelector('strong.current_level');
-let linesUI = document.querySelector('strong.current_lines');
-let scoreUI = document.querySelector('strong.current_score');
 
 export default class Records {
     constructor(player,level){
         this.player = !player ? 'unknown' : player;
+        this.level = !level || level < 1 ? 1 : level ;
         this.score = 0;
-        this.level = !level ? 0 : level ;
         this.lines = 0;        
-
         
     }
     
     setInitialUIvalues(){
-        playerUI.textContent = `${this.player}`;
-        levelUI.textContent = `${this.level}`;
-        linesUI.textContent = `${this.lines}`;
-        scoreUI.textContent = `${this.score}`;
+        this.setName(this.player);
+        this.setLevel(this.level);
+        this.setLines(this.lines);
+        this.setScore(this.score);
         
     }
+    
+    getLevel(){
+        return this.level;
+    }    
+    getScore(){
+        return this.score;
+    }
+    getLines(){
+        return this.lines;
+    }
 
-    updateUIValues(score,level,lines) {
-        //get the current values and update UI
-        levelUI.textContent = `${level}`;
-        linesUI.textContent = `${lines}`;
-        scoreUI.textContent = `${score}`;
+    setLevel(level){
+        let levelUI = document.querySelector('strong.current_level');
+        levelUI.textContent = this.level = level;        
+    }    
+
+    setScore(score){
+        let scoreUI = document.querySelector('strong.current_score');
+        scoreUI.textContent = this.score = score;
+    }
+    setLines(lines){
+        let linesUI = document.querySelector('strong.current_lines');
+        linesUI.textContent = this.lines = lines;
+    }
+    setName(name){
+        let playerUI = document.querySelector('strong.current_player');
+        playerUI.textContent = this.player = name;
     }
 
 
