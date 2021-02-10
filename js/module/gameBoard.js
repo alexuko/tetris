@@ -8,10 +8,4 @@ export default class Gameboard {
     createGameBoard() {
         return [...Array(this.row)].map(() => Array(this.col).fill(0));
     }
-    rowSizeGB() {
-        return this.row;
-    }
-    colSizeGB() {
-        return this.col;
-    }
 }

@@ -15,16 +15,6 @@ export default class Records {
         this.setScore(this.score);
         
     }
-    
-    getLevel(){
-        return this.level;
-    }    
-    getScore(){
-        return this.score;
-    }
-    getLines(){
-        return this.lines;
-    }
 
     setLevel(level){
         let levelUI = document.querySelector('strong.current_level');
