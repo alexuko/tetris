@@ -19,13 +19,14 @@ export default class Records {
     setLevel(level){
         let levelUI = document.querySelector('strong.current_level');
         levelUI.textContent = this.level = level;        
+        return level;
     }    
 
-    setScore(score){
+    setScore(score = 0){
         let scoreUI = document.querySelector('strong.current_score');
         scoreUI.textContent = this.score = score;
     }
-    setLines(lines){
+    setLines(lines = 0){
         let linesUI = document.querySelector('strong.current_lines');
         linesUI.textContent = this.lines = lines;
     }

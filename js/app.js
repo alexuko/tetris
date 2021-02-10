@@ -14,7 +14,7 @@ canvas.width = COL * SQ;
 canvas.height = ROW * SQ;
 
 const empty = 0;
-let level,score,lines, gameBoard, brush, piece, records, nextPiece = null;
+let score,lines,level,speed,gameBoard, brush, piece, records,  nextPiece = null;
 let gameOver = true;
 let start = Date.now();
 
@@ -147,8 +147,12 @@ const checkFullRows = () => {
             fullRows < 4 ? score += fullRows * 10 : score += fullRows * 20;
             records.setLines(lines);
             records.setScore(score);
-            records.setLevel(level);
+            speed = setSpeed(lines);
+            records.setLevel(speed);
         }
+}
+const setSpeed = (linesCompleted = 0) => {
+    return linesCompleted <= 0 ? 1 : Math.floor(1 + (((linesCompleted - 1) / 10) + .1));    
 }
 
 const pullRowsDown = (from) => {
@@ -502,6 +506,7 @@ const getRandomPiece = () => {
     if(nextPiece === null) {
         // rand will hold a random number between 0 and the bag of tetrominoes length 
         // and return a number. Math.floor() will convert the double to the nearest lower int 
+        // const rand = Math.floor( Math.random() * tetrominoes.length) ;
         const rand = Math.floor( Math.random() * tetrominoes.length) ;
         //getColor(rand + 1) >> + 1 is because in the array of colors the position 0 is saved for the empty space color (blackish)  
         return new Piece(tetrominoes[rand],getColor(rand + 1),rand)
@@ -538,7 +543,8 @@ const update = () => {
     if(!gameOver){
         let now = Date.now();
         let timeCounter = now - start;
-        const sec = 1000 / level;
+
+        const sec = 1000 / speed;
     
         if (timeCounter > sec) {
             moveDown();
@@ -563,8 +569,7 @@ const keyControl = (e) => {
         }
         if (e.type === "keyup") {
             if ((e.key === "ArrowRight"|| e.keyCode === 39) ||  
-                (e.key === "ArrowLeft" || e.keyCode === 37)  ||
-                (e.key === "ArrowDown" || e.keyCode === 40)) start = Date.now();
+                (e.key === "ArrowLeft" || e.keyCode === 37)  ) start = Date.now();
             }
 
     }
@@ -576,15 +581,16 @@ const init = () => {
     brush = new Brush(SQ);
     gameOver = false;
     records = new Records('alex');
-    score = records.score;
-    lines = records.lines;
-    level = records.level;
     records.setInitialUIvalues()
     drawGameBoard(GBctx,ROW, COL)
     piece = getRandomPiece()
     drawPiece(GBctx,piece);
     getNextPiece()
-    // update()
+    score = records.score;
+    lines = records.lines;
+    speed = setSpeed();
+    console.log("speed " + speed)    
+    update();
 
 }
 
