@@ -14,7 +14,7 @@ canvas.width = COL * SQ;
 canvas.height = ROW * SQ;
 
 const empty = 0;
-let score,lines,level,speed,gameBoard, brush, piece, records,  nextPiece = null;
+let score,lines,speed,gameBoard, brush, piece, lockedPiece, records,  nextPiece = null;
 let gameOver = true;
 let start = Date.now();
 
@@ -151,6 +151,7 @@ const checkFullRows = () => {
             records.setLevel(speed);
         }
 }
+
 const setSpeed = (linesCompleted = 0) => {
     return linesCompleted <= 0 ? 1 : Math.floor(1 + (((linesCompleted - 1) / 10) + .1));    
 }
@@ -191,6 +192,22 @@ const merge = () => {
         }
 
 }
+
+const moveUp = (rotateAction = false) => {
+    //check if there is no collision, if there's no,then move tetrominoe to the right 1 space
+if (!rotateAction) {
+    if (!collision(DIRECTION.up)) { //check if there is no collision and if there is not,
+        erasePiece(GBctx,piece)
+        piece.moveTo(DIRECTION.up);
+        drawPiece(GBctx,piece)
+    }
+
+} else {
+    piece.moveTo(DIRECTION.up)
+    return;
+}
+}
+
 const moveDown = () => {
     
     if (!collision(DIRECTION.down)) {
@@ -201,26 +218,32 @@ const moveDown = () => {
         merge()
         checkFullRows();
         drawGameBoard(GBctx, ROW, COL)
-
+        lockedPiece =true;
         piece = getRandomPiece();
         drawPiece(GBctx, piece);
         getNextPiece();
     }
 }
 
-const moveUp = (rotateAction = false) => {
-        //check if there is no collision, if there's no,then move tetrominoe to the right 1 space
-    if (!rotateAction) {
-        if (!collision(DIRECTION.up)) { //check if there is no collision and if there is not,
-            erasePiece(GBctx,piece)
-            piece.moveTo(DIRECTION.up);
-            drawPiece(GBctx,piece)
+const hardDrop = () => {
+    // console.log(`hard drop`)
+    //get tetrominoe last occupied positions in its matrix (row and col) 
+    const tetroLastCol = piece.lastOccupiedRowOrCol(false)
+    const tetroLastRow = piece.lastOccupiedRowOrCol(true)
+    // set to false so se can unlock the piece and drop it
+    lockedPiece = false;
+    // r = starting from where piece spawns y + the last tetrominoe occupied row + 1 as arrays are zero based
+    // iterate until last row of the gameboard 
+    for(let r = piece.y + tetroLastRow + 1; r <= ROW - 1; r++){
+        // c = starting from where piece spawns x + + the last tetrominoe occupied col  
+        for(let c = piece.x; c <=  piece.x + tetroLastCol; c++){
+            // console.log(`row: ${r} col: ${c}`)
+            // if the piece has not been locked then keep moving down 
+            if(!lockedPiece) moveDown();
+            // if piece is lock, leave loop 
+            else break;
         }
-
-    } else {
-        piece.moveTo(DIRECTION.up)
-        return;
-    }
+    }    
 }
 
 const moveRight = (rotateAction = false) => {
@@ -258,7 +281,7 @@ const moveLeft = (rotateAction = false) => {
     
 const rotate = (clockwise = false, rotTimes = 0) => {
     try {
-        console.log(`Rotation-times: ${rotTimes}`)
+        // console.log(`Rotation-times: ${rotTimes}`)
         const initialPosition = piece.position;
         const initial_X = piece.x;
         const initial_Y = piece.y;
@@ -371,7 +394,7 @@ const piecesOverlapped = () => {
                 }
             }
         }
-        console.log('does not overlap')
+        // console.log('does not overlap')
         // Piece did not overlapped 
         return false;
 
@@ -556,16 +579,21 @@ const update = () => {
     }
 };
 
+
+
+
 const keyControl = (e) => {
     // console.log(e)
     if(!gameOver){
         if (e.type === "keydown") {
             // console.log(e.code)
             if (e.key === "KeyZ"      || e.keyCode === 90) rotate(false);
-            if (e.key === "ArrowUp"   || e.keyCode === 38) rotate(true);
-            if (e.key === "ArrowRight"|| e.keyCode === 39) moveRight();                
-            if (e.key === "ArrowLeft" || e.keyCode === 37) moveLeft();
-            if (e.key === "ArrowDown" || e.keyCode === 40) moveDown();
+            else if (e.key === "ArrowUp"   || e.keyCode === 38) rotate(true);
+            else if (e.key === "ArrowRight"|| e.keyCode === 39) moveRight();                
+            else if (e.key === "ArrowLeft" || e.keyCode === 37) moveLeft();
+            else if (e.key === "ArrowDown" || e.keyCode === 40) moveDown();
+            else if (e.key === "Space"     || e.keyCode === 32) hardDrop();
+            else{console.log("invalid key")}
         }
         if (e.type === "keyup") {
             if ((e.key === "ArrowRight"|| e.keyCode === 39) ||  
@@ -588,13 +616,12 @@ const init = () => {
     getNextPiece()
     score = records.score;
     lines = records.lines;
-    speed = setSpeed();
-    console.log("speed " + speed)    
+    speed = setSpeed();  
     update();
 
 }
 
-init();
 ["keydown", "keyup"].forEach((e) => window.addEventListener(e,keyControl));
-// ["keydown", "keyup"].forEach((e) => window.addEventListener(e,(e) => keyControl(e,piece)) );
 
+//Start Game
+init();

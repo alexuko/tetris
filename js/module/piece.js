@@ -24,6 +24,22 @@ export default class Piece {
         if (dir[0] === 'down')  this.y += 1;
          
     }
-    
+
+    lastOccupiedRowOrCol(isRow) {
+        let row = 0,col = 0;
+        for (let r = 0; r < this.activeTetrominoe.length; r++) {
+            for (let c = 0; c < this.activeTetrominoe[r].length; c++) {
+                //forget about zeros
+                if (!this.activeTetrominoe[r][c]) continue;
+                // compares current values with initial values (row and col variables)
+                // if current values are bigger then replace variable value from either row or col 
+                row = r > row ? r : row;
+                col = c > col ? c : col;
+            }
+        }
+        // returns either column or row         
+        return isRow ? row : col;
+
+    }
 
 }
